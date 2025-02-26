@@ -8,6 +8,7 @@ services:
       - ./redis/master-data:/data
       - ./redis/config/master.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
+    user: "redis:redis"
     ports:
       - "6379:6379"
     environment:
@@ -38,6 +39,7 @@ services:
       - redis-network
     depends_on:
       - redis-master
+    user: "redis:redis"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
@@ -60,6 +62,7 @@ services:
       - REDIS_MASTER_PORT=6379
     networks:
       - redis-network
+    user: "redis:redis"
     depends_on:
       - redis-master
     restart: unless-stopped
