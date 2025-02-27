@@ -1,28 +1,33 @@
 # python-redis-mixin
 Python Redis MixinLike Library
 
-> mkdir -p redis/master-data redis/replica1-data redis/replica2-data redis/config
-> chmod 777 redis/master-data redis/replica1-data redis/replica2-data
+Run all redis services de-attached
+```bash
+  docker compose up -d
+```
 
-> docker-compose up -d
-
-> docker-compose ps
-
-> docker exec -it redis-master redis-cli -a YourStrongPasswordHere info replication
+Check services up and running
+```bash
+  docker-compose ps
+```
 
 This setup includes:
 
-Password protection for all Redis instances
-Persistent data storage with AOF
-Health checks
-Network isolation
+Volumes:
+    /redis/redis-master-data: Redis Master data storage
+    /redis/replica1-data: Redis Replica 1 data storage
+    /redis/replica2-data: Redis Replica 2 data storage
+
+> Note: Delete and re-create directories if you encounter any permission issues. 
+
+> Password protection for all Redis instances
+
+> Persistent data storage with AOF
+
+> Health checks
+
+> Network isolation
+All redis instances are isolated in the same network. This is useful for security and performance reasons over redis-network.
 Commented TLS configuration options (uncomment if needed)
-Proper volume mounting for data persistence
+
 For production use, make sure to use a strong password and consider enabling the TLS options for encrypted connections.
-
-
-
-
-Retry
-
-
