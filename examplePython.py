@@ -1,5 +1,6 @@
 import redis
 
+
 def connect_redis(master_host="redis-master", master_port=6379, replica_hosts=["redis-replica-1", "redis-replica-2"], replica_port=6379, password=None):
     """
     Connects to a Redis master-replica setup.

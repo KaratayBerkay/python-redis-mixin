@@ -39,7 +39,7 @@ services:
       - redis-master
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_REP_1_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -63,7 +63,7 @@ services:
       - redis-master
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_REP_2_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -76,7 +76,18 @@ services:
     ports:
       - "8081:8888"
     depends_on:
-      - initservice
+      - redis-replica-1
+      - redis-replica-2
+    environment:
+      - REDIS_HOST=redis-master
+      - REDIS_REP_1_HOST=redis-replica-1
+      - REDIS_REP_2_HOST=redis-replica-2
+      - REDIS_REP_1_PASSWORD=YourStrongPasswordHereForReplica1
+      - REDIS_REP_2_PASSWORD=YourStrongPasswordHereForReplica2
+      - REDIS_PASSWORD=YourStrongPasswordHere
+      - REDIS_PORT=6379
+      - REDIS_REP_1_PORT=6380
+      - REDIS_REP_2_PORT=6381
     networks:
       - wag-network
 

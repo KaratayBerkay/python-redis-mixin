@@ -10,7 +10,7 @@ RUN apt-get update \
     && pip install --no-cache-dir poetry
 
 # Copy Poetry configuration
-COPY DockerApiServices/pyproject.toml ./pyproject.toml
+COPY pyproject.toml ./pyproject.toml
 
 # Configure Poetry and install dependencies with optimizations
 RUN poetry config virtualenvs.create false \
@@ -18,8 +18,6 @@ RUN poetry config virtualenvs.create false \
     && pip cache purge \
     && rm -rf ~/.cache/pypoetry
 
-# Copy application code
-COPY DockerApiServices/AuthServiceApi /app
 
 # Copy application code
 COPY mixin /app
