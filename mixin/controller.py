@@ -40,13 +40,13 @@ class RedisController:
         """
         if not self.replica_redis_configs:
             raise Exception("No replica configs are given to create connections")
-        for _ in self.replica_redis_configs:
+        for replica_config in self.replica_redis_configs:
             replica_redis_cli = None
             try:
-                replica_redis_cli = RedisConn(_).client
+                replica_redis_cli = RedisConn(replica_config).client
             except Exception as e:
                 print(
-                    f"Redis Connection Error {_.first_replica_url} raised error : ",
+                    f"Redis Connection Error {replica_config['host']} raised error : ",
                     e,
                 )
             # If replica node is connected successfully, add it to the pool
