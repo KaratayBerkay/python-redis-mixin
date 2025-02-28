@@ -1,6 +1,4 @@
-import arrow
-
-from typing import Union, Optional
+from typing import Union, Optional, Dict
 from controller import RedisController, redis_controller
 from schemas import RedisSchema
 from rows import MultipleRows, RedisRow
@@ -13,6 +11,25 @@ class RedisClient:
 
     def __init__(self, controller: RedisController):
         self.__controller = controller
+
+    @classmethod
+    def get_expiry_time(cls, expiry_kwargs: Dict[str, int]) -> int:
+        """Calculate expiry time in seconds from kwargs."""
+        time_multipliers = {"days": 86400, "hours": 3600, "minutes": 60, "seconds": 1}
+        return sum(
+            int(expiry_kwargs.get(unit, 0)) * multiplier
+            for unit, multiplier in time_multipliers.items()
+        )
+
+    @classmethod
+    def set_expiry_time(cls, expiry_seconds: int) -> Dict[str, int]:
+        """Convert total seconds back into a dictionary of time units."""
+        time_multipliers = {"days": 86400, "hours": 3600, "minutes": 60, "seconds": 1}
+        result = {}
+        for unit, multiplier in time_multipliers.items():
+            if expiry_seconds >= multiplier:
+                result[unit], expiry_seconds = divmod(expiry_seconds, multiplier)
+        return result
 
     def set_schema(self, schema: RedisSchema) -> bool:
         pass
@@ -30,7 +47,6 @@ class RedisClient:
         Returns:
             Returns a RedisRow object or None
         """
-
         self.check_schema()
         match_key: str = self.__schema.merge_key(key_dict=keys_dict)
         list_of_rows, json_rows = [], self.__controller.read_cli.scan_iter(match=match_key)
@@ -75,16 +91,13 @@ class RedisClient:
             RedisRow object or raises an exception
         """
         self.check_schema()
-        redis_row = RedisRow(
-            schema=self.__schema, delimiter=self.__schema.delimiter,
-        )
-        dyn_dict = self.dynamic_key_list_to_dict(dynamic_keys=keys)
-        redis_row.set_key(key_dict=dyn_dict)
+        redis_row = RedisRow(schema=self.__schema, delimiter=self.__schema.delimiter)
+        redis_row.set_key(key_dict=self.dynamic_key_list_to_dict(dynamic_keys=keys))
         redis_row.feed(value=value)
         if expires_at:
             self.__controller.write_cli.setex(
                 name=redis_row.key,
-                time=100,
+                time=self.get_expiry_time(expiry_kwargs=expires_at),
                 value=redis_row.value,
             )
         else:
