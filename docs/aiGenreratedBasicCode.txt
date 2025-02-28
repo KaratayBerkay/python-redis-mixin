@@ -2,19 +2,6 @@ import redis
 
 
 def connect_redis(master_host="redis-master", master_port=6379, replica_hosts=["redis-replica-1", "redis-replica-2"], replica_port=6379, password=None):
-    """
-    Connects to a Redis master-replica setup.
-
-    Args:
-        master_host: Hostname of the Redis master.
-        master_port: Port of the Redis master.
-        replica_hosts: List of hostnames of Redis replicas.
-        replica_port: Port of the Redis replicas.
-        password: Optional password for Redis authentication.
-
-    Returns:
-        A tuple containing the Redis master connection and a list of Redis replica connections.
-    """
 
     try:
         if password:
