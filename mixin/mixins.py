@@ -31,10 +31,17 @@ class RedisClient:
                 result[unit], expiry_seconds = divmod(expiry_seconds, multiplier)
         return result
 
-    def set_schema(self, schema: RedisSchema) -> bool:
-        pass
+    def set_schema(self, schema: RedisSchema) -> None:
+        """
+        Args:
+            schema: RedisSchema object to change schema of redis key pattern
+        """
+        self.__schema = schema
 
     def check_schema(self) -> None:
+        """
+        Check if schema is declared. If not raise an exception.
+        """
         if not self.__schema:
             raise Exception("Declare schema first. Redis Controller needs a schema to match key patterns.")
 
