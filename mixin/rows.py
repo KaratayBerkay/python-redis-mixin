@@ -49,6 +49,16 @@ class RedisRow:
         self.__delimiter = delimiter
 
     @property
+    def value(self) -> str:
+        """
+        Get stored value in JSON format.
+
+        Returns:
+            str: JSON serialized data
+        """
+        return self.__value
+
+    @property
     def data(self) -> Union[Dict, List]:
         """
         Get stored value as Python object.
