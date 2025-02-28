@@ -89,25 +89,12 @@ class RedisRow:
         dynamic_key_dict = {}
         for key_dyn in key_dict.keys():     # Remove all items that are not included in schema
             if str(key_dyn).upper() in list(str(k).upper() for k in self.__schema.dynamics):
+                if str(self.__delimiter) in str(key_dict[key_dyn]):
+                    raise RedisKeyError(f"Key value cannot contain delimiter: {self.__delimiter}")
                 dynamic_key_dict[str(key_dyn).upper()] = key_dict[key_dyn]
         return dynamic_key_dict
 
     def update_key(self, key_dict: dict) -> None:
-        """
-        Args:
-            key_dict:
-
-        Returns:
-
-        """
-        already_dyn_keys = list(set(self.key.split(":")) - set(self.__schema.statics))
-        if not len(already_dyn_keys) == len(self.__schema.dynamics):
-            message = "|".join(self.__schema.dynamics)
-            raise RedisKeyError(f"Redis Dynamic Key must set before updating key/keys: {message}")
-
-        dynamic_key_dict = self.clean_key_dict_input(key_dict)
-
-    def set_key(self, key_dict: dict) -> None:
         """
         Set key by combining static and dynamic keys.
         Args:
@@ -120,13 +107,45 @@ class RedisRow:
             dynamic = [Name, location, UUID]
             dynamic = aaaa:bbbb:cccc
         """
-        dynamic_key_dict = self.clean_key_dict_input(key_dict)
+        already_dyn_dict = {}
+        already_dyn_keys = list(set(self.key.split(":")) - set(self.__schema.statics))
+        if not len(already_dyn_keys) == len(self.__schema.dynamics):
+            message = "|".join(self.__schema.dynamics)
+            raise RedisKeyError(f"Redis Dynamic Key must set before updating key/keys: {message}")
+
+        for ix, already_dyn_key in enumerate(self.__schema.dynamics):
+            already_dyn_dict[already_dyn_key] = already_dyn_keys[ix]
+
+        dynamic_key_dict, dynamic_key = self.clean_key_dict_input(key_dict), ""
+        upper_dynamic_keys = [str(k).upper() for k in dynamic_key_dict.keys()]
+        for upper_dynamic_key in upper_dynamic_keys:
+            if upper_dynamic_key in key_dict:
+                dynamic_key += f"{key_dict[upper_dynamic_key]}{self.__delimiter}"
+            else:
+                dynamic_key += f"{already_dyn_dict[upper_dynamic_key]}{self.__delimiter}"
+        self.__key = str(dynamic_key[:-1]).encode()
+
+    def set_key(self, key_dict: dict) -> None:
+        """
+        Set key by combining static and dynamic keys.
+        Args:
+            key_dict: {}
+                key_name (str): Redis key name
+                key_value (str): Redis key value
+            {
+                "Name": John,
+                "Location": "UK",
+                "UUID": "1234"
+            }
+            dynamic = [Name, location, UUID]
+            dynamic = aaaa:bbbb:cccc
+        """
+        dynamic_key_dict, dynamic_key = self.clean_key_dict_input(key_dict), ""
         upper_dynamic_keys = [str(k).upper() for k in dynamic_key_dict.keys()]
         if not len(dynamic_key_dict) == len(self.__schema.dynamics):
             message = "|".join(self.__schema.dynamics)
             raise RedisKeyError(f"Redis Dynamic Key Dictionary must have all key/keys: {message}")
 
-        dynamic_key = ""
         for upper_dynamic_key in upper_dynamic_keys:
             dynamic_key += f"{key_dict[upper_dynamic_key]}{self.__delimiter}"
         self.__key = str(dynamic_key[:-1]).encode()
@@ -173,5 +192,3 @@ class RedisRow:
                 raise RedisError(f"Unsupported value type: {type(value)}")
         except json.JSONDecodeError as e:
             raise RedisValueError(f"Invalid JSON format: {str(e)}")
-
-
