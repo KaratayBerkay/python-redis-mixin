@@ -1,4 +1,4 @@
-from config import redis_configs
+from config import master_config, redis_replica_redis_configs
 from conn import RedisConn, Redis
 
 
@@ -23,18 +23,14 @@ class RedisController:
         if not self.master_redis_config:
             raise Exception("No master configs are given to create a connection")
         try:
-            master_node = RedisConn(
-                dict(
-                    host=redis_configs.HOST,
-                    password=redis_configs.PASSWORD,
-                    port=redis_configs.PORT,
-                    db=redis_configs.DB
-                )
-            ).client
+            master_node = RedisConn(self.master_redis_config).client
             if master_node.ping():
                 self.__master_node = master_node
         except Exception as e:
-            print(f"Redis Connection Error {redis_configs.master_redis_url} raised error : ", e)
+            print(
+                f"Redis Connection Error {self.master_redis_config['host']} raised error : ",
+                e,
+            )
 
     def set_all_replicas(self):
         """
@@ -47,20 +43,19 @@ class RedisController:
         for _ in self.replica_redis_configs:
             replica_redis_cli = None
             try:
-                replica_redis_cli = RedisConn(
-                    dict(
-                        host=redis_configs.REP_1_HOST,
-                        password=redis_configs.REP_1_PASSWORD,
-                        port=redis_configs.REP_1_PORT,
-                        db=redis_configs.REP_1_DB
-                    )
-                ).client
+                replica_redis_cli = RedisConn(_).client
             except Exception as e:
-                print(f"Redis Connection Error {redis_configs.first_replica_url} raised error : ", e)
-            if replica_redis_cli.ping():    # If replica node is connected successfully, add it to the pool
+                print(
+                    f"Redis Connection Error {_.first_replica_url} raised error : ",
+                    e,
+                )
+            # If replica node is connected successfully, add it to the pool
+            if replica_redis_cli.ping():
                 self.__conn_pool.append(replica_redis_cli)
         if not self.replica_redis_configs:
-            raise Exception("No replicas are created for the pool. Check the configurations.")
+            raise Exception(
+                "No replicas are created for the pool. Check the configurations."
+            )
 
     @property
     def read_cli(self) -> Redis:
@@ -73,7 +68,8 @@ class RedisController:
             raise Exception("No replica connections are available")
 
         total_length = len(self.__conn_pool)
-        if total_length == 1:    # If there is only one replica, return the same connection
+        # If there is only one replica, return the same connection
+        if total_length == 1:
             return self.__conn_pool[0]
         elif self.__active_reader + 1 < total_length:
             active_connection = self.__conn_pool[self.__active_reader]
@@ -94,31 +90,10 @@ class RedisController:
         return self.__master_node
 
 
-redis_replica_redis_configs = [
-    dict(
-        host=redis_configs.REP_1_HOST,
-        password=redis_configs.REP_1_PASSWORD,
-        port=redis_configs.REP_1_PORT,
-        db=redis_configs.REP_1_DB
-    ),
-    dict(
-        host=redis_configs.REP_2_HOST,
-        password=redis_configs.REP_2_PASSWORD,
-        port=redis_configs.REP_2_PORT,
-        db=redis_configs.REP_2_DB
-    )
-]
-master_config = dict(
-    host=redis_configs.HOST,
-    password=redis_configs.PASSWORD,
-    port=redis_configs.PORT,
-    db=redis_configs.DB
-)
 """
 Create a RedisController object to manage the master-replica setup. Singleton pattern is used to ensure only one
 instance of the controller is created.
 """
 redis_controller = RedisController(
-    master_redis_config=master_config,
-    replica_redis_configs=redis_replica_redis_configs
+    master_redis_config=master_config, replica_redis_configs=redis_replica_redis_configs
 )

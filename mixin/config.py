@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,7 +19,7 @@ class Configs(BaseSettings):
     REP_2_PORT: int = 6381
     REP_2_DB: int = 0
 
-    model_config = SettingsConfigDict(env_prefix='REDIS_', env_file="../.env")
+    model_config = SettingsConfigDict(env_prefix="REDIS_", env_file="../.env")
 
     @property
     def master_redis_url(self):
@@ -37,3 +35,23 @@ class Configs(BaseSettings):
 
 
 redis_configs = Configs()
+redis_replica_redis_configs = [
+    dict(
+        host=redis_configs.REP_1_HOST,
+        password=redis_configs.REP_1_PASSWORD,
+        port=redis_configs.REP_1_PORT,
+        db=redis_configs.REP_1_DB,
+    ),
+    dict(
+        host=redis_configs.REP_2_HOST,
+        password=redis_configs.REP_2_PASSWORD,
+        port=redis_configs.REP_2_PORT,
+        db=redis_configs.REP_2_DB,
+    ),
+]
+master_config = dict(
+    host=redis_configs.HOST,
+    password=redis_configs.PASSWORD,
+    port=redis_configs.PORT,
+    db=redis_configs.DB,
+)

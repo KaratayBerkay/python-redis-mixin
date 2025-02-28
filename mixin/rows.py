@@ -8,10 +8,12 @@ This module provides a class for managing Redis key-value operations with suppor
     - JSON serialization/deserialization
     - Type-safe value handling
 """
+
 import json
 import arrow
+
 from typing import Union, Dict, List, Optional, Any
-from errors import RedisError, RedisKeyError, RedisValueError
+from errors import RedisKeyError, RedisValueError
 from schemas import RedisSchema
 
 
@@ -30,6 +32,7 @@ class RedisRow:
         __value: The stored value (will be JSON serialized)
         __expires_at: Optional expiration timestamp
     """
+
     __schema: RedisSchema
     __key: bytes
     __value: str
@@ -87,10 +90,16 @@ class RedisRow:
             dict: Cleaned dictionary
         """
         dynamic_key_dict = {}
-        for key_dyn in key_dict.keys():     # Remove all items that are not included in schema
-            if str(key_dyn).upper() in list(str(k).upper() for k in self.__schema.dynamics):
+        for (
+            key_dyn
+        ) in key_dict.keys():  # Remove all items that are not included in schema
+            if str(key_dyn).upper() in list(
+                str(k).upper() for k in self.__schema.dynamics
+            ):
                 if str(self.__delimiter) in str(key_dict[key_dyn]):
-                    raise RedisKeyError(f"Key value cannot contain delimiter: {self.__delimiter}")
+                    raise RedisKeyError(
+                        f"Key value cannot contain delimiter: {self.__delimiter}"
+                    )
                 dynamic_key_dict[str(key_dyn).upper()] = key_dict[key_dyn]
         return dynamic_key_dict
 
@@ -111,7 +120,9 @@ class RedisRow:
         already_dyn_keys = list(set(self.key.split(":")) - set(self.__schema.statics))
         if not len(already_dyn_keys) == len(self.__schema.dynamics):
             message = "|".join(self.__schema.dynamics)
-            raise RedisKeyError(f"Redis Dynamic Key must set before updating key/keys: {message}")
+            raise RedisKeyError(
+                f"Redis Dynamic Key must set before updating key/keys: {message}"
+            )
 
         for ix, already_dyn_key in enumerate(self.__schema.dynamics):
             already_dyn_dict[already_dyn_key] = already_dyn_keys[ix]
@@ -122,7 +133,9 @@ class RedisRow:
             if upper_dynamic_key in key_dict:
                 dynamic_key += f"{key_dict[upper_dynamic_key]}{self.__delimiter}"
             else:
-                dynamic_key += f"{already_dyn_dict[upper_dynamic_key]}{self.__delimiter}"
+                dynamic_key += (
+                    f"{already_dyn_dict[upper_dynamic_key]}{self.__delimiter}"
+                )
         self.__key = str(dynamic_key[:-1]).encode()
 
     def set_key(self, key_dict: dict) -> None:
@@ -144,7 +157,9 @@ class RedisRow:
         upper_dynamic_keys = [str(k).upper() for k in dynamic_key_dict.keys()]
         if not len(dynamic_key_dict) == len(self.__schema.dynamics):
             message = "|".join(self.__schema.dynamics)
-            raise RedisKeyError(f"Redis Dynamic Key Dictionary must have all key/keys: {message}")
+            raise RedisKeyError(
+                f"Redis Dynamic Key Dictionary must have all key/keys: {message}"
+            )
 
         for upper_dynamic_key in upper_dynamic_keys:
             dynamic_key += f"{key_dict[upper_dynamic_key]}{self.__delimiter}"
@@ -189,6 +204,6 @@ class RedisRow:
             elif isinstance(value, str):
                 self.__value = str(value)
             else:
-                raise RedisError(f"Unsupported value type: {type(value)}")
+                raise RedisValueError(f"Unsupported value type: {type(value)}")
         except json.JSONDecodeError as e:
             raise RedisValueError(f"Invalid JSON format: {str(e)}")

@@ -1,5 +1,5 @@
 from typing import Union
-from errors import RedisError, RedisKeyError, RedisValueError
+from errors import RedisKeyError
 
 
 class RedisSchema:
@@ -22,10 +22,14 @@ class RedisSchema:
             >>> )
         """
         if not static_keys:
-            raise RedisKeyError("Static keys are required to create dynamic search with keys.")
+            raise RedisKeyError(
+                "Static keys are required to create dynamic search with keys."
+            )
 
         if not dynamic_keys:
-            raise RedisKeyError("Dynamic keys are required to create dynamic search with keys.")
+            raise RedisKeyError(
+                "Dynamic keys are required to create dynamic search with keys."
+            )
 
         self.__static_keys = static_keys
         self.__dynamic_keys = dynamic_keys
@@ -89,5 +93,3 @@ class RedisSchema:
             for _ in dynamic_keys:
                 if _ not in self.__dynamic_keys:
                     self.__dynamic_keys.append(_)
-
-
