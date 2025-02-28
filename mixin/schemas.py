@@ -8,7 +8,7 @@ class RedisSchema:
     __dynamic_keys: list = []
     __delimiter: str = ":"
 
-    def __init__(self, static_keys: list, dynamic_keys: list):
+    def __init__(self, static_keys: list, dynamic_keys: list, delimiter: str = ":"):
         """
         Initialize RedisKeys with static keys. Set dynamic keys via set_keys method.
         Args:
@@ -21,6 +21,7 @@ class RedisSchema:
             >>> dynamic_keys=["DYNAMIC_KEY_1", "DYNAMIC_KEY_2", "DYNAMIC_KEY_3"]
             >>> )
         """
+        self.__delimiter = delimiter
         if not static_keys:
             raise RedisKeyError(
                 "Static keys are required to create dynamic search with keys."
@@ -33,6 +34,15 @@ class RedisSchema:
 
         self.__static_keys = static_keys
         self.__dynamic_keys = dynamic_keys
+
+    @property
+    def delimiter(self):
+        """
+        Get delimiter.
+        Returns:
+            str: Delimiter
+        """
+        return self.__delimiter
 
     @property
     def dynamics(self):
@@ -93,3 +103,38 @@ class RedisSchema:
             for _ in dynamic_keys:
                 if _ not in self.__dynamic_keys:
                     self.__dynamic_keys.append(_)
+
+    def clean_key_dict_input(self, key_dict: dict) -> dict:
+        """
+        Clean key_dict input by removing unnecessary keys.
+        Args:
+            key_dict: Dictionary of keys
+        Returns:
+            dict: Cleaned dictionary
+        """
+        dynamic_key_dict = {}
+        for key_dyn in key_dict.keys():  # Remove all items that are not included in schema
+            if str(key_dyn).upper() in list(
+                str(k).upper() for k in self.dynamics
+            ):
+                if str(self.__delimiter) in str(key_dict[key_dyn]):
+                    raise RedisKeyError(
+                        f"Key value cannot contain delimiter: {self.__delimiter}"
+                    )
+                dynamic_key_dict[str(key_dyn).upper()] = key_dict[key_dyn]
+        return dynamic_key_dict
+
+    def merge_key(self, key_dict: dict) -> str:
+        """
+        Merge key with dynamic keys.
+        Args:
+            key_dict: Dictionary of keys
+        """
+        dynamic_key_dict, dynamic_key = self.clean_key_dict_input(key_dict), ""
+        upper_dynamic_keys = [str(k).upper() for k in dynamic_key_dict.keys()]
+        for upper_dynamic_key in upper_dynamic_keys:
+            key_to_set = "*"
+            if upper_dynamic_key in key_dict:
+                key_to_set = key_dict[upper_dynamic_key]
+            dynamic_key += f"{key_to_set}{self.__delimiter}"
+        return str(dynamic_key[:-1])
