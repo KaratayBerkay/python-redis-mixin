@@ -12,8 +12,8 @@ This module provides a class for managing Redis key-value operations with suppor
 import json
 
 from typing import Union, Dict, List, Optional, Any
-from errors import RedisKeyError, RedisValueError
-from schemas import RedisSchema
+from .errors import RedisKeyError, RedisValueError
+from .schemas import RedisSchema
 
 
 class RedisRow:

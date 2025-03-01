@@ -1,5 +1,6 @@
 from mixin.mixins import redis_client
 from mixin.schemas import RedisSchema
+from print_actions import print_rows
 
 
 # Create schema object to use at controller
@@ -9,18 +10,16 @@ schema_first = RedisSchema(
     delimiter=":",
 )
 
+
 # Use client object to set schema
 redis_client.set_schema(schema=schema_first)
 redis_client.store(
     keys=["KeyToFind1", "KeyToFind2", "KeyToFind3"],
-    value={
-        "Name": "John", "Location": "UK", "UUID": "1234"
-    },
+    value={"Name": "John", "Location": "UK", "UUID": "1234"},
     expires_at={"minutes": 10}
 )
-multiple_rows = redis_client.find(keys_dict={"DYNAMIC_KEY_2": "KeyToFind1"})
 
-print('List of all rows (Keys) : ', [multiple_row.key for multiple_row in multiple_rows.all])
-print('List of all rows (Data) : ', [multiple_row.data for multiple_row in multiple_rows.all])
-print('First row        (Keys) : ', multiple_rows.first.key)
-print('First row        (Data) : ', multiple_rows.first.data)
+
+# Find a row with dynamic keys {"name": "value"} pair
+multiple_rows = redis_client.find(keys_dict={"DYNAMIC_KEY_2": "KeyToFind1"})
+print_rows(multiple_rows)

@@ -1,7 +1,7 @@
 from typing import Union, Optional, Dict
-from controller import RedisController, redis_controller
-from schemas import RedisSchema
-from rows import MultipleRows, RedisRow
+from .controller import RedisController, redis_controller
+from .schemas import RedisSchema
+from .rows import MultipleRows, RedisRow
 
 
 class RedisClient:

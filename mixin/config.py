@@ -8,16 +8,19 @@ class Configs(BaseSettings):
     PASSWORD: str = ""
     PORT: int = 6379
     DB: int = 0
+    MASTER_USER: str = "default"
 
     REP_1_HOST: str = "localhost"
     REP_1_PASSWORD: str = ""
     REP_1_PORT: int = 6380
     REP_1_DB: int = 0
+    REP_1_USER: str = "default"
 
     REP_2_HOST: str = "localhost"
     REP_2_PASSWORD: str = ""
     REP_2_PORT: int = 6381
     REP_2_DB: int = 0
+    REP_2_USER: str = "default"
 
     model_config = SettingsConfigDict(env_prefix="REDIS_", env_file="../.env")
 
@@ -41,12 +44,14 @@ redis_replica_redis_configs = [
         password=redis_configs.REP_1_PASSWORD,
         port=redis_configs.REP_1_PORT,
         db=redis_configs.REP_1_DB,
+        username=redis_configs.REP_1_USER,
     ),
     dict(
         host=redis_configs.REP_2_HOST,
         password=redis_configs.REP_2_PASSWORD,
         port=redis_configs.REP_2_PORT,
         db=redis_configs.REP_2_DB,
+        username=redis_configs.REP_2_USER,
     ),
 ]
 master_config = dict(
@@ -54,4 +59,5 @@ master_config = dict(
     password=redis_configs.PASSWORD,
     port=redis_configs.PORT,
     db=redis_configs.DB,
+    username=redis_configs.MASTER_USER,
 )

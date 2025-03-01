@@ -20,7 +20,7 @@ RUN poetry config virtualenvs.create false \
 
 
 # Copy application code
-COPY mixin /app
+ADD . /app/
 
 # Set Python path to include app directory
 ENV PYTHONPATH=/app \
@@ -28,4 +28,4 @@ ENV PYTHONPATH=/app \
     PYTHONDONTWRITEBYTECODE=1
 
 # Run the application using the configured uvicorn server
-CMD ["poetry", "run", "python", "app.py"]
+CMD ["poetry", "run", "python", "rtest/app.py"]

@@ -1,5 +1,5 @@
-from config import master_config, redis_replica_redis_configs
-from conn import RedisConn, Redis
+from .config import master_config, redis_replica_redis_configs
+from .conn import RedisConn, Redis
 
 
 class RedisController:
@@ -11,6 +11,12 @@ class RedisController:
     def __init__(self, master_redis_config, replica_redis_configs: list):
         self.master_redis_config = master_redis_config
         self.replica_redis_configs = replica_redis_configs
+        print(
+            dict(
+                master_redis_config=master_redis_config,
+                replica_redis_configs=replica_redis_configs,
+            )
+        )
         self.set_master_node()
         self.set_all_replicas()
 
@@ -43,6 +49,7 @@ class RedisController:
         for replica_config in self.replica_redis_configs:
             replica_redis_cli = None
             try:
+
                 replica_redis_cli = RedisConn(replica_config).client
             except Exception as e:
                 print(

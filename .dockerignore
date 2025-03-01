@@ -1,0 +1,6 @@
+
+/.venv
+.env
+.gitignore
+.python-version
+*README.md

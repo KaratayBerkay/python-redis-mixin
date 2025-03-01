@@ -4,16 +4,19 @@ services:
     image: redis:7.2-alpine
     container_name: redis-master
     volumes:
-      - ./redis/master-data:/data
-      - ./redis/config/master.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
+      - master-data:/data
+      - ./DockerRedis/config/master.conf:/usr/local/etc/redis/master.conf.template
+    command: /bin/sh -c "apk add --no-cache gettext && envsubst < /usr/local/etc/redis/master.conf.template > /usr/local/etc/redis/master.conf && redis-server /usr/local/etc/redis/master.conf"
     ports:
       - "6379:6379"
     environment:
       - REDIS_REPLICATION_MODE=master
+      - REDIS_PASSWORD=YourStrongPasswordHere
+      - REDIS_MASTER_USER=master-user
+      - REDIS_MASTER_PORT=6379
     networks:
       - redis-network
-    restart: unless-stopped
+#    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
@@ -24,15 +27,19 @@ services:
     image: redis:7.2-alpine
     container_name: redis-replica-1
     volumes:
-      - ./redis/replica1-data:/data
-      - ./redis/config/replica.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
+      - replica1-data:/data
+      - ./DockerRedis/config/replica.conf:/usr/local/etc/redis/replica.conf.template
+    command: /bin/sh -c "apk add --no-cache gettext && envsubst < /usr/local/etc/redis/replica.conf.template > /usr/local/etc/redis/replica.conf && redis-server /usr/local/etc/redis/replica.conf"
     ports:
       - "6380:6379"
     environment:
       - REDIS_REPLICATION_MODE=slave
       - REDIS_MASTER_HOST=redis-master
       - REDIS_MASTER_PORT=6379
+      - REDIS_PASSWORD=YourStrongPasswordHere
+      - REDIS_REP_1_PASSWORD=YourStrongPasswordHereForReplica1
+      - REDIS_REP_1_USER=replica-1-user
+      - REDIS_MASTER_USER=master-user
     networks:
       - redis-network
     depends_on:
@@ -48,15 +55,19 @@ services:
     image: redis:7.2-alpine
     container_name: redis-replica-2
     volumes:
-      - ./redis/replica2-data:/data
-      - ./redis/config/replica.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
+      - replica2-data:/data
+      - ./DockerRedis/config/second.conf:/usr/local/etc/redis/second.conf.template
+    command: /bin/sh -c "apk add --no-cache gettext && envsubst < /usr/local/etc/redis/second.conf.template > /usr/local/etc/redis/second.conf && redis-server /usr/local/etc/redis/second.conf"
     ports:
       - "6381:6379"
     environment:
       - REDIS_REPLICATION_MODE=slave
       - REDIS_MASTER_HOST=redis-master
       - REDIS_MASTER_PORT=6379
+      - REDIS_PASSWORD=YourStrongPasswordHere
+      - REDIS_MASTER_USER=master-user
+      - REDIS_REP_2_PASSWORD=YourStrongPasswordHereForReplica2
+      - REDIS_REP_2_USER=replica-2-user
     networks:
       - redis-network
     depends_on:
@@ -68,29 +79,38 @@ services:
       timeout: 5s
       retries: 5
 
-  redisMixin:
-    container_name: redisMixin
-    build:
-      context: .
-      dockerfile: /Dockerfile
-    ports:
-      - "8081:8888"
-    depends_on:
-      - redis-replica-1
-      - redis-replica-2
-    environment:
-      - REDIS_HOST=redis-master
-      - REDIS_REP_1_HOST=redis-replica-1
-      - REDIS_REP_2_HOST=redis-replica-2
-      - REDIS_REP_1_PASSWORD=YourStrongPasswordHereForReplica1
-      - REDIS_REP_2_PASSWORD=YourStrongPasswordHereForReplica2
-      - REDIS_PASSWORD=YourStrongPasswordHere
-      - REDIS_PORT=6379
-      - REDIS_REP_1_PORT=6380
-      - REDIS_REP_2_PORT=6381
-    networks:
-      - wag-network
+#  redis-mixin:
+#    container_name: redis-mixin
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    ports:
+#      - "8081:8888"
+#    depends_on:
+#      - redis-replica-1
+#      - redis-replica-2
+#    restart: unless-stopped
+#    environment:
+#      - REDIS_HOST=redis-master
+#      - REDIS_REP_1_HOST=redis-replica-1
+#      - REDIS_REP_2_HOST=redis-replica-2
+#      - REDIS_REP_1_PASSWORD=YourStrongPasswordHereForReplica1
+#      - REDIS_REP_2_PASSWORD=YourStrongPasswordHereForReplica2
+#      - REDIS_PASSWORD=YourStrongPasswordHere
+#      - REDIS_PORT=6379
+#      - REDIS_REP_1_PORT=6379
+#      - REDIS_REP_2_PORT=6379
+#      - REDIS_MASTER_USER=master-user
+#      - REDIS_REP_1_USER=replica-1-user
+#      - REDIS_REP_2_USER=replica-2-user
+#    networks:
+#      - redis-network
 
 networks:
   redis-network:
     driver: bridge
+
+volumes:
+  master-data:
+  replica1-data:
+  replica2-data:

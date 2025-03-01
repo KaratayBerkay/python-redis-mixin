@@ -1,5 +1,5 @@
 from typing import Union
-from errors import RedisKeyError
+from .errors import RedisKeyError
 
 
 class RedisSchema:

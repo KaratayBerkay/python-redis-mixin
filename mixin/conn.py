@@ -1,4 +1,7 @@
 from redis import Redis
+from redis.retry import Retry
+from redis.backoff import ExponentialBackoff
+from redis.exceptions import ConnectionError, TimeoutError, AuthenticationError
 
 
 class RedisConn:
@@ -22,7 +25,19 @@ class RedisConn:
                 db = int
             )
         """
-        self.redis = Redis(**config_dict)
+        try:
+            self.redis = Redis(
+                **config_dict,
+                retry=Retry(ExponentialBackoff(cap=5.12, base=0.1), retries=5),
+                retry_on_timeout=True,
+                retry_on_error=[ConnectionError, TimeoutError]
+            )
+        except AuthenticationError as e:
+            print(f"Redis Authentication error: {e}")
+        except ConnectionError as e:
+            print(f"Redis Connection error: {e}")
+        except Exception as e:
+            print(f"Redis Error: {e}")
         if not self.check_connection():
             raise Exception("Connection error")
 
@@ -49,6 +64,5 @@ class RedisConn:
     def client(self) -> Redis:
         """
             Returns the Redis client object.
-        Returns:
         """
         return self.redis
