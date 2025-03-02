@@ -1,21 +1,25 @@
-
 services:
+
+  # Redis Master Service to write data to the Redis Cluster
   redis-master:
-    image: redis:7.2-alpine
+    build:
+      context: .
+      dockerfile: DockerRedis/Master.Dockerfile
     container_name: redis-master
     volumes:
       - master-data:/data
       - ./DockerRedis/config/master.conf:/usr/local/etc/redis/master.conf.template
-    command: /bin/sh -c "apk add --no-cache gettext && envsubst < /usr/local/etc/redis/master.conf.template > /usr/local/etc/redis/master.conf && redis-server /usr/local/etc/redis/master.conf"
+#    command: /bin/sh -c "apk add --no-cache gettext && envsubst < /usr/local/etc/redis/master.conf.template > /usr/local/etc/redis/master.conf && redis-server /usr/local/etc/redis/master.conf"
     ports:
       - "6379:6379"
     environment:
       - REDIS_REPLICATION_MODE=master
       - REDIS_PASSWORD=YourStrongPasswordHere
-      - REDIS_MASTER_USER=master-user
+#      - REDIS_MASTER_USER=master-user
       - REDIS_MASTER_PORT=6379
     networks:
-      - redis-network
+      redis_network:
+        ipv4_address: 192.168.1.10
 #    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
@@ -23,25 +27,29 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis Replica 1 to read data from the Master
   redis-replica-1:
-    image: redis:7.2-alpine
+    build:
+      context: .
+      dockerfile: DockerRedis/ReplicaF.Dockerfile
     container_name: redis-replica-1
     volumes:
       - replica1-data:/data
       - ./DockerRedis/config/replica.conf:/usr/local/etc/redis/replica.conf.template
-    command: /bin/sh -c "apk add --no-cache gettext && envsubst < /usr/local/etc/redis/replica.conf.template > /usr/local/etc/redis/replica.conf && redis-server /usr/local/etc/redis/replica.conf"
+#    command: /bin/sh -c "apk add --no-cache gettext && envsubst < /usr/local/etc/redis/replica.conf.template > /usr/local/etc/redis/replica.conf && redis-server /usr/local/etc/redis/replica.conf"
     ports:
       - "6380:6379"
     environment:
       - REDIS_REPLICATION_MODE=slave
       - REDIS_MASTER_HOST=redis-master
       - REDIS_MASTER_PORT=6379
+      - REDIS_MASTER_USER=master-user
       - REDIS_PASSWORD=YourStrongPasswordHere
       - REDIS_REP_1_PASSWORD=YourStrongPasswordHereForReplica1
       - REDIS_REP_1_USER=replica-1-user
-      - REDIS_MASTER_USER=master-user
     networks:
-      - redis-network
+      redis_network:
+        ipv4_address: 192.168.1.11
     depends_on:
       - redis-master
     restart: unless-stopped
@@ -51,25 +59,29 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis Replica 2 to read data from the Master
   redis-replica-2:
-    image: redis:7.2-alpine
+    build:
+      context: .
+      dockerfile: DockerRedis/ReplicaS.Dockerfile
     container_name: redis-replica-2
     volumes:
       - replica2-data:/data
       - ./DockerRedis/config/second.conf:/usr/local/etc/redis/second.conf.template
-    command: /bin/sh -c "apk add --no-cache gettext && envsubst < /usr/local/etc/redis/second.conf.template > /usr/local/etc/redis/second.conf && redis-server /usr/local/etc/redis/second.conf"
+#    command: /bin/sh -c "apk add --no-cache gettext && envsubst < /usr/local/etc/redis/second.conf.template > /usr/local/etc/redis/second.conf && redis-server /usr/local/etc/redis/second.conf"
     ports:
       - "6381:6379"
     environment:
       - REDIS_REPLICATION_MODE=slave
       - REDIS_MASTER_HOST=redis-master
       - REDIS_MASTER_PORT=6379
-      - REDIS_PASSWORD=YourStrongPasswordHere
       - REDIS_MASTER_USER=master-user
+      - REDIS_PASSWORD=YourStrongPasswordHere
       - REDIS_REP_2_PASSWORD=YourStrongPasswordHereForReplica2
       - REDIS_REP_2_USER=replica-2-user
     networks:
-      - redis-network
+      redis_network:
+        ipv4_address: 192.168.1.12
     depends_on:
       - redis-master
     restart: unless-stopped
@@ -79,37 +91,143 @@ services:
       timeout: 5s
       retries: 5
 
-#  redis-mixin:
-#    container_name: redis-mixin
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
+  # Redis Mixin Service that runs on top of the Redis Cluster
+  redis-mixin:
+    container_name: redis-mixin
+    build:
+      context: .
+      dockerfile: Dockerfile
 #    ports:
 #      - "8081:8888"
-#    depends_on:
-#      - redis-replica-1
-#      - redis-replica-2
-#    restart: unless-stopped
-#    environment:
-#      - REDIS_HOST=redis-master
-#      - REDIS_REP_1_HOST=redis-replica-1
-#      - REDIS_REP_2_HOST=redis-replica-2
-#      - REDIS_REP_1_PASSWORD=YourStrongPasswordHereForReplica1
-#      - REDIS_REP_2_PASSWORD=YourStrongPasswordHereForReplica2
-#      - REDIS_PASSWORD=YourStrongPasswordHere
-#      - REDIS_PORT=6379
-#      - REDIS_REP_1_PORT=6379
-#      - REDIS_REP_2_PORT=6379
-#      - REDIS_MASTER_USER=master-user
-#      - REDIS_REP_1_USER=replica-1-user
-#      - REDIS_REP_2_USER=replica-2-user
-#    networks:
-#      - redis-network
+    depends_on:
+      - redis-replica-1
+      - redis-replica-2
+    restart: unless-stopped
+    environment:
+      - REDIS_HOST=redis-master
+      - REDIS_REP_1_HOST=redis-replica-1
+      - REDIS_REP_2_HOST=redis-replica-2
+      - REDIS_REP_1_PASSWORD=YourStrongPasswordHereForReplica1
+      - REDIS_REP_2_PASSWORD=YourStrongPasswordHereForReplica2
+      - REDIS_PASSWORD=YourStrongPasswordHere
+      - REDIS_PORT=6379
+      - REDIS_REP_1_PORT=6380
+      - REDIS_REP_2_PORT=6381
+      - REDIS_MASTER_USER=default
+      - REDIS_REP_1_USER=default
+      - REDIS_REP_2_USER=default
+      - REDIS_SENTINEL_HOSTS=redis-sentinel-1:26379,redis-sentinel-2:26380,redis-sentinel-3:26381
+      - REDIS_SENTINEL_MASTER_NAME=sentinel-master
+      - REDIS_SENTINEL_PASSWORD=YourSentinelStrongPasswordHere
+    networks:
+      redis_network:
+        ipv4_address: 192.168.1.13
 
+  # Redis Sentinel 1
+  redis-sentinel-1:
+    image: redis:7.2-alpine
+    container_name: redis-sentinel-1
+    volumes:
+      - ./DockerRedis/config/sentinel.conf:/usr/local/etc/redis/sentinel.conf.template
+    command: >
+      sh -c "
+      apk add --no-cache gettext &&
+      envsubst < /usr/local/etc/redis/sentinel.conf.template > /usr/local/etc/redis/sentinel.conf &&
+      redis-server /usr/local/etc/redis/sentinel.conf --sentinel
+      "
+    ports:
+      - "26379:26379"
+    environment:
+      - REDIS_SENTINEL_QUORUM=2
+      - REDIS_SENTINEL_DOWN_AFTER=5000
+      - REDIS_SENTINEL_FAILOVER=10000
+      - REDIS_MASTER_HOST=192.168.1.10
+      - REDIS_MASTER_PORT=6379
+      - REDIS_MASTER_NAME=master-redis-worker
+      - REDIS_MASTER_USER=master-user
+      - REDIS_PASSWORD=YourStrongPasswordHere
+      - REDIS_SENTINEL_PASSWORD=YourSentinelStrongPasswordHere
+      - REDIS_SENTINEL_ANNOUNCE_IP=192.168.1.14
+    networks:
+      redis_network:
+        ipv4_address: 192.168.1.14
+    depends_on:
+      - redis-replica-1
+      - redis-replica-2
+    restart: unless-stopped
+
+  # Redis Sentinel 2
+  redis-sentinel-2:
+    image: redis:7.2-alpine
+    container_name: redis-sentinel-2
+    volumes:
+      - ./DockerRedis/config/sentinel.conf:/usr/local/etc/redis/sentinel.conf.template
+    command: >
+      sh -c "
+      apk add --no-cache gettext &&
+      envsubst < /usr/local/etc/redis/sentinel.conf.template > /usr/local/etc/redis/sentinel.conf &&
+      redis-server /usr/local/etc/redis/sentinel.conf --sentinel
+      "
+    ports:
+      - "26380:26379"
+    environment:
+      - REDIS_SENTINEL_QUORUM=2
+      - REDIS_SENTINEL_DOWN_AFTER=5000
+      - REDIS_SENTINEL_FAILOVER=10000
+      - REDIS_MASTER_HOST=192.168.1.10
+      - REDIS_MASTER_PORT=6379
+      - REDIS_MASTER_NAME=master-redis-worker
+      - REDIS_PASSWORD=YourStrongPasswordHere
+      - REDIS_SENTINEL_PASSWORD=YourSentinelStrongPasswordHere
+      - REDIS_SENTINEL_ANNOUNCE_IP=192.168.1.15
+    networks:
+      redis_network:
+        ipv4_address: 192.168.1.15
+    depends_on:
+      - redis-replica-1
+      - redis-replica-2
+    restart: unless-stopped
+
+  # Redis Sentinel 3
+  redis-sentinel-3:
+    image: redis:7.2-alpine
+    container_name: redis-sentinel-3
+    volumes:
+      - ./DockerRedis/config/sentinel.conf:/usr/local/etc/redis/sentinel.conf.template
+    command: >
+      sh -c "
+      apk add --no-cache gettext &&
+      envsubst < /usr/local/etc/redis/sentinel.conf.template > /usr/local/etc/redis/sentinel.conf &&
+      redis-server /usr/local/etc/redis/sentinel.conf --sentinel
+      "
+    ports:
+      - "26381:26379"
+    environment:
+      - REDIS_SENTINEL_QUORUM=2
+      - REDIS_SENTINEL_DOWN_AFTER=5000
+      - REDIS_SENTINEL_FAILOVER=10000
+      - REDIS_MASTER_HOST=192.168.1.10
+      - REDIS_MASTER_PORT=6379
+      - REDIS_MASTER_NAME=master-redis-worker
+      - REDIS_PASSWORD=YourStrongPasswordHere
+      - REDIS_SENTINEL_PASSWORD=YourSentinelStrongPasswordHere
+      - REDIS_SENTINEL_ANNOUNCE_IP=192.168.1.16
+    networks:
+      redis_network:
+        ipv4_address: 192.168.1.16
+    depends_on:
+      - redis-replica-1
+      - redis-replica-2
+    restart: unless-stopped
+
+# Closed network for Redis
 networks:
-  redis-network:
-    driver: bridge
+  redis_network:
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24    # Custom IP range for Redis
 
+# Redis Volumes for each container to store data on the host machine hard drive
 volumes:
   master-data:
   replica1-data:

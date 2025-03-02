@@ -43,7 +43,9 @@ class RedisClient:
         Check if schema is declared. If not raise an exception.
         """
         if not self.__schema:
-            raise Exception("Declare schema first. Redis Controller needs a schema to match key patterns.")
+            raise Exception(
+                "Declare schema first. Redis Controller needs a schema to match key patterns."
+            )
 
     def find(self, keys_dict: dict) -> Optional[MultipleRows]:
         """
@@ -56,14 +58,15 @@ class RedisClient:
         """
         self.check_schema()
         match_key: str = self.__schema.merge_key(key_dict=keys_dict)
-        list_of_rows, json_rows = [], self.__controller.read_cli.scan_iter(match=match_key)
+        list_of_rows, json_rows = [], self.__controller.read_cli.scan_iter(
+            match=match_key
+        )
+        print('list of rows', list(json_rows))
         for json_row in list(json_rows):
             redis_row = RedisRow(schema=self.__schema, delimiter=self.__schema.delimiter)
             redis_row.feed(value=json_row)
             list_of_rows.append(redis_row)
-        if list_of_rows:
-            return MultipleRows(rows=list_of_rows)
-        return None
+        return MultipleRows(rows=list_of_rows)
 
     def dynamic_key_list_to_dict(self, dynamic_keys: list[str]) -> dict:
         """
@@ -75,7 +78,10 @@ class RedisClient:
         self.check_schema()
         if len(dynamic_keys) != len(self.__schema.dynamics):
             raise Exception("Number of dynamic keys does not match schema.")
-        return {self.__schema.dynamics[ix]: dynamic_keys[ix] for ix, _ in enumerate(self.__schema.dynamics)}
+        return {
+            self.__schema.dynamics[ix]: dynamic_keys[ix]
+            for ix, _ in enumerate(self.__schema.dynamics)
+        }
 
     def store(
         self,

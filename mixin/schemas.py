@@ -113,10 +113,10 @@ class RedisSchema:
             dict: Cleaned dictionary
         """
         dynamic_key_dict = {}
-        for key_dyn in key_dict.keys():  # Remove all items that are not included in schema
-            if str(key_dyn).upper() in list(
-                str(k).upper() for k in self.dynamics
-            ):
+        for (
+            key_dyn
+        ) in key_dict.keys():  # Remove all items that are not included in schema
+            if str(key_dyn).upper() in list(str(k).upper() for k in self.dynamics):
                 if str(self.__delimiter) in str(key_dict[key_dyn]):
                     raise RedisKeyError(
                         f"Key value cannot contain delimiter: {self.__delimiter}"
@@ -132,9 +132,9 @@ class RedisSchema:
         """
         dynamic_key_dict, dynamic_key = self.clean_key_dict_input(key_dict), ""
         upper_dynamic_keys = [str(k).upper() for k in dynamic_key_dict.keys()]
-        for upper_dynamic_key in upper_dynamic_keys:
+        for upper_dynamic_key in self.dynamics:
             key_to_set = "*"
-            if upper_dynamic_key in key_dict:
+            if upper_dynamic_key in upper_dynamic_keys:
                 key_to_set = key_dict[upper_dynamic_key]
             dynamic_key += f"{key_to_set}{self.__delimiter}"
-        return str(dynamic_key[:-1])
+        return str(self.category) + ":" + str(dynamic_key[:-1])

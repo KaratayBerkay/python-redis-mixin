@@ -30,7 +30,7 @@ class RedisConn:
                 **config_dict,
                 retry=Retry(ExponentialBackoff(cap=5.12, base=0.1), retries=5),
                 retry_on_timeout=True,
-                retry_on_error=[ConnectionError, TimeoutError]
+                retry_on_error=[ConnectionError, TimeoutError],
             )
         except AuthenticationError as e:
             print(f"Redis Authentication error: {e}")
@@ -63,6 +63,6 @@ class RedisConn:
     @property
     def client(self) -> Redis:
         """
-            Returns the Redis client object.
+        Returns the Redis client object.
         """
         return self.redis

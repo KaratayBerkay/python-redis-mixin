@@ -11,12 +11,6 @@ class RedisController:
     def __init__(self, master_redis_config, replica_redis_configs: list):
         self.master_redis_config = master_redis_config
         self.replica_redis_configs = replica_redis_configs
-        print(
-            dict(
-                master_redis_config=master_redis_config,
-                replica_redis_configs=replica_redis_configs,
-            )
-        )
         self.set_master_node()
         self.set_all_replicas()
 

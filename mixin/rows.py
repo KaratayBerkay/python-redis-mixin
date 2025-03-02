@@ -99,7 +99,9 @@ class RedisRow:
             dict: Cleaned dictionary
         """
         dynamic_key_dict = {}
-        for key_dyn in key_dict.keys():  # Remove all items that are not included in schema
+        for (
+            key_dyn
+        ) in key_dict.keys():  # Remove all items that are not included in schema
             if str(key_dyn).upper() in list(
                 str(k).upper() for k in self.__schema.dynamics
             ):
@@ -167,21 +169,11 @@ class RedisRow:
             )
         for upper_dynamic_key in upper_dynamic_keys:
             dynamic_key += f"{key_dict[upper_dynamic_key]}{self.__delimiter}"
-        self.__key = str(dynamic_key[:-1]).encode()
+        self.__key = (str(self.__schema.category) + ':' + str(dynamic_key[:-1])).encode()
 
     @property
     def key(self):
         return self.__key.decode()
-
-    # def get_expiry_time(self) -> int | None:
-    #     """Calculate expiry time in seconds from kwargs."""
-    #     time_multipliers = {"days": 86400, "hours": 3600, "minutes": 60, "seconds": 1}
-    #     if self.expires_at:
-    #         return sum(
-    #             int(self.expires_at.get(unit, 0)) * multiplier
-    #             for unit, multiplier in time_multipliers.items()
-    #         )
-    #     return None
 
     def feed(self, value: Union[bytes, Dict, List, str]) -> None:
         """
@@ -238,4 +230,6 @@ class MultipleRows:
 
     @property
     def first(self) -> RedisRow:
+        if not self.__rows:
+            raise Exception("No records has found to return first row.")
         return list(self.__rows)[0]
