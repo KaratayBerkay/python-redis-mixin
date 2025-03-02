@@ -1,3 +1,4 @@
+from uuid import uuid4
 from mixin.mixins import redis_client
 from mixin.schemas import RedisSchema
 from print_actions import print_rows
@@ -16,7 +17,7 @@ def test_redis_actions():
     redis_client.set_schema(schema=schema_first)
     redis_client.store(
         keys=["KeyToFind1", "KeyToFind2", "KeyToFind3"],
-        value={"Name": "John", "Location": "UK", "UUID": "1234"},
+        value={"Name": "John", "Location": "UK", "UUID": str(uuid4())},
         expires_at={"minutes": 10},
     )
 

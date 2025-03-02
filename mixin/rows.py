@@ -171,6 +171,9 @@ class RedisRow:
             dynamic_key += f"{key_dict[upper_dynamic_key]}{self.__delimiter}"
         self.__key = (str(self.__schema.category) + ':' + str(dynamic_key[:-1])).encode()
 
+    def set_key_value(self, key: bytes) -> None:
+        self.__key = key
+
     @property
     def key(self):
         return self.__key.decode()

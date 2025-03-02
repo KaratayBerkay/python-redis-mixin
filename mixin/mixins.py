@@ -61,10 +61,14 @@ class RedisClient:
         list_of_rows, json_rows = [], self.__controller.read_cli.scan_iter(
             match=match_key
         )
-        print('list of rows', list(json_rows))
-        for json_row in list(json_rows):
+        json_rows_list = list(json_rows)
+        for json_key in json_rows_list:
             redis_row = RedisRow(schema=self.__schema, delimiter=self.__schema.delimiter)
-            redis_row.feed(value=json_row)
+            row = self.__controller.read_cli.get(name=json_key)
+            if not row:
+                continue
+            redis_row.feed(value=row)
+            redis_row.set_key_value(key=json_key)
             list_of_rows.append(redis_row)
         return MultipleRows(rows=list_of_rows)
 
